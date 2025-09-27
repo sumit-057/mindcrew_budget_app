@@ -32,22 +32,37 @@ with app.app_context():
     flask_db.create_all()
 
 # ----------------------------
+# CORS Handling
+# ----------------------------
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
+# ----------------------------
 # Routes
 # ----------------------------
 
 # Add a new budget
-@app.route('/budgets', methods=['POST'])
+@app.route('/budgets', methods=['POST', 'OPTIONS'])
 def add_budget():
+    if request.method == 'OPTIONS':
+        return '', 200
     data = request.get_json()
-    budget = Budget(
-        name=data['name'],
-        amount=data['amount'],
-        start_date=datetime.strptime(data['start_date'], "%Y-%m-%d").date(),
-        end_date=datetime.strptime(data['end_date'], "%Y-%m-%d").date()
-    )
-    flask_db.session.add(budget)
-    flask_db.session.commit()
-    return jsonify({"message": "Budget added successfully"}), 201
+    try:
+        budget = Budget(
+            name=data['name'],
+            amount=data['amount'],
+            start_date=datetime.strptime(data['start_date'], "%Y-%m-%d").date(),
+            end_date=datetime.strptime(data['end_date'], "%Y-%m-%d").date()
+        )
+        flask_db.session.add(budget)
+        flask_db.session.commit()
+        return jsonify({"message": "Budget added successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 # Get all budgets
 @app.route('/budgets', methods=['GET'])
@@ -67,18 +82,23 @@ def get_budgets():
     return jsonify(result)
 
 # Add a new expense
-@app.route('/expenses', methods=['POST'])
+@app.route('/expenses', methods=['POST', 'OPTIONS'])
 def add_expense():
+    if request.method == 'OPTIONS':
+        return '', 200
     data = request.get_json()
-    expense = Expense(
-        budget_id=data['budget_id'],
-        description=data.get('description', ''),
-        amount=data['amount'],
-        date=datetime.strptime(data['date'], "%Y-%m-%d").date()
-    )
-    flask_db.session.add(expense)
-    flask_db.session.commit()
-    return jsonify({"message": "Expense added successfully"}), 201
+    try:
+        expense = Expense(
+            budget_id=data['budget_id'],
+            description=data.get('description', ''),
+            amount=data['amount'],
+            date=datetime.strptime(data['date'], "%Y-%m-%d").date()
+        )
+        flask_db.session.add(expense)
+        flask_db.session.commit()
+        return jsonify({"message": "Expense added successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 # Get all expenses for a budget
 @app.route('/budgets/<int:budget_id>/expenses', methods=['GET'])
