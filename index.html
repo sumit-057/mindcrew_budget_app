@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-Spend Budget App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Pro-Spend Budget App</h1>
+
+    <div class="container">
+        <!-- Add Budget -->
+        <div class="box">
+            <h2>Add Budget</h2>
+            <form id="budget-form">
+                <input type="text" id="budget-name" placeholder="Budget Name" required>
+                <input type="number" id="budget-amount" placeholder="Budget Amount" required>
+                <input type="date" id="budget-start" required>
+                <input type="date" id="budget-end" required>
+                <button type="submit">Add Budget</button>
+            </form>
+        </div>
+
+        <!-- Add Expense -->
+        <div class="box">
+            <h2>Add Expense</h2>
+            <form id="expense-form">
+                <select id="expense-budget" required>
+                    <option value="">Select Budget</option>
+                </select>
+                <input type="text" id="expense-description" placeholder="Description">
+                <input type="number" id="expense-amount" placeholder="Amount" required>
+                <input type="date" id="expense-date" required>
+                <button type="submit">Add Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Display Budgets -->
+    <div class="box">
+        <h2>Budgets</h2>
+        <div id="budgets-list"></div>
+    </div>
+
+    <!-- Display Expenses -->
+    <div class="box">
+        <h2>Expenses</h2>
+        <div id="expenses-list"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
