@@ -3,52 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Spend Budget App</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Budget Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #budgets-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .budget-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .budget-card h3 {
+            margin-top: 0;
+        }
+        .budget-card button {
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        #expense-modal, #expenses-list-modal, #prediction-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .close-btn {
+            background: #f44336;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f2f2f2;
+        }
+        .status-on-track {
+            color: green;
+        }
+        .status-overspending {
+            color: red;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Pro-Spend Budget App</h1>
+    <h1>Budget Tracker</h1>
 
-    <div class="container">
-        <!-- Add Budget -->
-        <div class="box">
-            <h2>Add Budget</h2>
-            <form id="budget-form">
-                <input type="text" id="budget-name" placeholder="Budget Name" required>
-                <input type="number" id="budget-amount" placeholder="Budget Amount" required>
-                <input type="date" id="budget-start" required>
-                <input type="date" id="budget-end" required>
-                <button type="submit">Add Budget</button>
-            </form>
-        </div>
+    <!-- Add Budget Form -->
+    <h2>Add New Budget</h2>
+    <form id="add-budget-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required>
+        
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" step="0.01" required>
+        
+        <label for="start_date">Start Date (YYYY-MM-DD):</label>
+        <input type="date" id="start_date" required>
+        
+        <label for="end_date">End Date (YYYY-MM-DD):</label>
+        <input type="date" id="end_date" required>
+        
+        <button type="submit">Add Budget</button>
+    </form>
+    <div id="budget-error" class="error-message"></div>
 
-        <!-- Add Expense -->
-        <div class="box">
+    <!-- Budgets List -->
+    <h2>Budgets</h2>
+    <div id="budgets-list"></div>
+
+    <!-- Add Expense Modal -->
+    <div id="expense-modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('expense-modal')">Close</button>
             <h2>Add Expense</h2>
-            <form id="expense-form">
-                <select id="expense-budget" required>
-                    <option value="">Select Budget</option>
-                </select>
-                <input type="text" id="expense-description" placeholder="Description">
-                <input type="number" id="expense-amount" placeholder="Amount" required>
+            <form id="add-expense-form">
+                <input type="hidden" id="expense-budget-id">
+                
+                <label for="description">Description:</label>
+                <input type="text" id="description">
+                
+                <label for="expense-amount">Amount:</label>
+                <input type="number" id="expense-amount" step="0.01" required>
+                
+                <label for="expense-date">Date (YYYY-MM-DD):</label>
                 <input type="date" id="expense-date" required>
+                
                 <button type="submit">Add Expense</button>
             </form>
+            <div id="expense-error" class="error-message"></div>
         </div>
     </div>
 
-    <!-- Display Budgets -->
-    <div class="box">
-        <h2>Budgets</h2>
-        <div id="budgets-list"></div>
+    <!-- Expenses List Modal -->
+    <div id="expenses-list-modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('expenses-list-modal')">Close</button>
+            <h2>Expenses for Budget</h2>
+            <table id="expenses-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="expenses-error" class="error-message"></div>
+        </div>
     </div>
 
-    <!-- Display Expenses -->
-    <div class="box">
-        <h2>Expenses</h2>
-        <div id="expenses-list"></div>
+    <!-- Prediction Modal -->
+    <div id="prediction-modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('prediction-modal')">Close</button>
+            <h2>Budget Prediction</h2>
+            <p id="prediction-message"></p>
+            <div id="prediction-error" class="error-message"></div>
+        </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const API_BASE = 'http://localhost:5000';
+
+        function showError(elementId, message) {
+            const errorDiv = document.getElementById(elementId);
+            errorDiv.textContent = message;
+        }
+
+        function clearError(elementId) {
+            const errorDiv = document.getElementById(elementId);
+            errorDiv.textContent = '';
+        }
+
+        // Fetch and display budgets
+        async function fetchBudgets() {
+            try {
+                const response = await fetch(`${API_BASE}/budgets`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const budgets = await response.json();
+                const list = document.getElementById('budgets-list');
+                list.innerHTML = '';
+                budgets.forEach(b => {
+                    const card = document.createElement('div');
+                    card.className = 'budget-card';
+                    card.innerHTML = `
+                        <h3>${b.name}</h3>
+                        <p>Amount: $${b.amount}</p>
+                        <p>Spent: $${b.spent}</p>
+                        <p>Start: ${b.start_date}</p>
+                        <p>End: ${b.end_date}</p>
+                        <button onclick="openAddExpense(${b.id})">Add Expense</button>
+                        <button onclick="viewExpenses(${b.id})">View Expenses</button>
+                        <button onclick="getPrediction(${b.id})">Predict</button>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error fetching budgets:', error);
+                showError('budget-error', 'Failed to load budgets. Please try again.');
+            }
+        }
+
+        // Add budget
+        document.getElementById('add-budget-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearError('budget-error');
+            const data = {
+                name: document.getElementById('name').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                start_date: document.getElementById('start_date').value,
+                end_date: document.getElementById('end_date').value
+            };
+            try {
+                const response = await fetch(`${API_BASE}/budgets`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                await response.json();
+                fetchBudgets();
+            } catch (error) {
+                console.error('Error adding budget:', error);
+                showError('budget-error', 'Failed to add budget. Please check your input and try again.');
+            }
+        });
+
+        // Open add expense modal
+        function openAddExpense(budgetId) {
+            clearError('expense-error');
+            document.getElementById('expense-budget-id').value = budgetId;
+            document.getElementById('expense-modal').style.display = 'flex';
+        }
+
+        // Add expense
+        document.getElementById('add-expense-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearError('expense-error');
+            const data = {
+                budget_id: parseInt(document.getElementById('expense-budget-id').value),
+                description: document.getElementById('description').value,
+                amount: parseFloat(document.getElementById('expense-amount').value),
+                date: document.getElementById('expense-date').value
+            };
+            try {
+                const response = await fetch(`${API_BASE}/expenses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                await response.json();
+                closeModal('expense-modal');
+                fetchBudgets();
+            } catch (error) {
+                console.error('Error adding expense:', error);
+                showError('expense-error', 'Failed to add expense. Please check your input and try again.');
+            }
+        });
+
+        // View expenses
+        async function viewExpenses(budgetId) {
+            clearError('expenses-error');
+            try {
+                const response = await fetch(`${API_BASE}/budgets/${budgetId}/expenses`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const expenses = await response.json();
+                const tbody = document.querySelector('#expenses-table tbody');
+                tbody.innerHTML = '';
+                expenses.forEach(e => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${e.id}</td>
+                        <td>${e.description}</td>
+                        <td>$${e.amount}</td>
+                        <td>${e.date}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                document.getElementById('expenses-list-modal').style.display = 'flex';
+            } catch (error) {
+                console.error('Error viewing expenses:', error);
+                showError('expenses-error', 'Failed to load expenses. Please try again.');
+            }
+        }
+
+        // Get prediction
+        async function getPrediction(budgetId) {
+            clearError('prediction-error');
+            try {
+                const response = await fetch(`${API_BASE}/budgets/${budgetId}/prediction`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const prediction = await response.json();
+                const message = document.getElementById('prediction-message');
+                message.textContent = prediction.message;
+                message.className = prediction.status === 'on_track' ? 'status-on-track' : 'status-overspending';
+                document.getElementById('prediction-modal').style.display = 'flex';
+            } catch (error) {
+                console.error('Error getting prediction:', error);
+                showError('prediction-error', 'Failed to get prediction. Please try again.');
+            }
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Initial fetch
+        fetchBudgets();
+    </script>
 </body>
 </html>
